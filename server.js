@@ -1,59 +1,51 @@
-// استيراد المكتبات المطلوبة
-var express = require('express');
-var bodyParser = require('body-parser');
-var fs = require('fs').promises;
-var path = require('path');
-var axios = require('axios');
-var TelegramBot = require('node-telegram-bot-api');
+ var express = require('express');
+ var bodyParser = require('body-parser');
+ var fs = require('fs').promises;
+ var path = require('path');
+ var axios = require('axios');
+ var TelegramBot = require('node-telegram-bot-api');
 
-// تهيئة التطبيق
-var app = express();
-var PORT = 3000;
-var filePath = 'first.txt'; // تم تغيير اسم first.json إلى first.txt
-var URLS_FILE = path.join(__dirname, 'urls.json');
+ var app = express();
+ var PORT = 3000;
+ var filePath = 'first.txt'; // Rename first.json to first.txt
+ var URLS_FILE = path.join(__dirname, 'urls.json');
 
-// دالة لقراءة ملف نصي
 async function readTextFile(filePath) {
     try {
-        var fileContent = await fs.readFile(filePath, 'utf8');
+         var fileContent = await fs.readFile(filePath, 'utf8');
         return fileContent;
     } catch (error) {
-        console.error('خطأ في قراءة الملف:', error);
+        console.error('Error reading file:', error);
         throw error;
     }
 }
 
-// دالة لقراءة بيانات النطاق من ملف
 async function readDomainDataFromFile() {
     try {
         var domainData = await fs.readFile('domain.txt', 'utf8');
         return domainData.trim();
     } catch (error) {
-        console.error('خطأ في قراءة ملف النطاق:', error);
+        console.error('Error reading domain file:', error);
         throw error;
     }
 }
 
-// استخدام وسيط تحليل JSON
 app.use(bodyParser.json());
 
-// تهيئة بوت التليجرام
-var CHANNEL_USERNAME = process.env.CHANNEL_USERNAME;
-var bot = new TelegramBot(process.env.TOKEN, { polling: true });
+ var CHANNEL_USERNAME = process.env.CHANNEL_USERNAME;
+ var bot = new TelegramBot(process.env.TOKEN, { polling: true });
 
-// أزرار الإنترفيس
-var joinChannelButton = {
-    text: 'انضم للقناة👻',
+ var joinChannelButton = {
+    text: 'JOIN CHANNEL👻',
     url: process.env.JOIN_CHANNEL_URL,
 };
-var joinedButton = {
-    text: 'لقد انضممت🥁',
+ var joinedButton = {
+    text: 'JOINED🥁',
     callback_data: 'check_joined'
 };
 
-// دالة إرسال رسالة طلب الانضمام للقناة
 async function sendJoinChannelMessage(chatId) {
-    var options = {
+     var options = {
         parse_mode: 'HTML',
         reply_markup: {
             inline_keyboard: [
@@ -61,11 +53,10 @@ async function sendJoinChannelMessage(chatId) {
             ]
         }
     };
-    var message = "يمكنك استخدام هذا البوت لتقصير أي رابط 🤩، لكنك لم تنضم لقناتنا. يرجى الانضمام ثم الضغط على 'لقد انضممت🙂'";
+     var message = "You can use this Telegram bot to shorten any link 🤩, but you're not joined to our channel. Please join and click 'Joined🙂'";
     await bot.sendMessage(chatId, `<pre>${message}</pre>`, options);
 }
 
-// معالجة الرسائل الواردة
 bot.on('message', async (msg) => {
     var chatId = msg.chat.id;
 
@@ -85,17 +76,16 @@ bot.on('message', async (msg) => {
         if (!chatIds.includes(chatId.toString())) {
             chatIds.push(chatId);
             await fs.writeFile(filePath, chatId + '\n', { flag: 'a' });
-            var message = '<pre>تم تسجيل معرف الدردشة الخاص بك كمشرف.</pre>';
+            var message = '<pre>Your chat ID has been recorded as the owner.</pre>';
             await bot.sendMessage(chatId, message, { parse_mode: 'HTML' });
         }
     } catch (error) {
-        console.error('خطأ في معالجة الرسالة:', error.message);
-        var errorMessage = '<pre>حدث خطأ أثناء معالجة طلبك.</pre>';
+        console.error('Error handling message:', error.message);
+        var errorMessage = '<pre>An error occurred while processing your request.</pre>';
         await bot.sendMessage(chatId, errorMessage, { parse_mode: 'HTML' });
     }
 });
 
-// معالجة أمر /start
 bot.onText(/\/start/, async (msg) => {
     var chatId = msg.chat.id;
     var member = await bot.getChatMember(CHANNEL_USERNAME, chatId);
@@ -107,7 +97,6 @@ bot.onText(/\/start/, async (msg) => {
     }
 });
 
-// معالجة استعلامات الـ callback (التحقق من الانضمام)
 bot.on('callback_query', async (query) => {
     var chatId = query.message.chat.id;
 
@@ -117,7 +106,7 @@ bot.on('callback_query', async (query) => {
         if (member.status === 'member' || member.status === 'administrator' || member.status === 'creator') {
             await startCommand(chatId);
         } else {
-            var randomMessage = "لم تنضم لجميع قنواتنا، يرجى الانضمام أولاً لاستخدامي بشكل صحيح 🥹";
+            var randomMessage = "You didn't join all our communities, please join them first to use me perfectly 🥹";
 
             await bot.answerCallbackQuery(query.id, {
                 text: randomMessage,
@@ -129,7 +118,6 @@ bot.on('callback_query', async (query) => {
     }
 });
 
-// معالجة استعلامات الـ callback (تقصير الرابط)
 bot.on('callback_query', async (query) => {
     var chatId = query.message.chat.id;
     var userId = query.from.id;
@@ -139,30 +127,28 @@ bot.on('callback_query', async (query) => {
         var member = await bot.getChatMember(CHANNEL_USERNAME, userId);
 
         if (member.status === 'member' || member.status === 'administrator' || member.status === 'creator') {
-            await bot.sendMessage(chatId, "أرسل الرابط الذي تريد تقصيره🔗", { reply_markup: { force_reply: true } });
+            await bot.sendMessage(chatId, "Send the URL you wanna shorten🔗", { reply_markup: { force_reply: true } });
         } else {
             await sendJoinChannelMessage(chatId);
         }
     }
 });
 
-// دالة أمر البدء
 async function startCommand(chatId) {
-    var message = "يمكنك استخدام بوت التقصير هذا لتقصير أي رابط بسهولة، فقط استخدم الزر أدناه وقصّر روابطك 🥁🤩😍";
+    var message = "You can use this shorter bot to shorten any URL easily, just use the button below and shorten your links 🥁🤩😍";
     var options = {
         parse_mode: 'HTML',
         reply_markup: {
             inline_keyboard: [
-                [{ text: "تقصير🔗", callback_data: "shorten_url" }]
+                [{ text: "Shorten🔗", callback_data: "shorten_url" }]
             ]
         }
     };
     await bot.sendMessage(chatId, `<pre>${message}</pre>`, options);
 }
 
-// معالجة الردود على طلب الرابط
 bot.on('message', async (msg) => {
-    if (msg.reply_to_message && msg.reply_to_message.text === "أرسل الرابط الذي تريد تقصيره🔗") {
+    if (msg.reply_to_message && msg.reply_to_message.text === "Send the URL you wanna shorten🔗") {
         var chatId = msg.chat.id;
         var userId = msg.from.id;
         var url = msg.text;
@@ -174,7 +160,7 @@ bot.on('message', async (msg) => {
                 var currentUrl = await readDomainDataFromFile();
                 var response = await axios.post(currentUrl, { url });
                 var shortenedUrl = `<b>${response.data.short_url}</b>`;
-                var message = `<pre>تم تقصير رابطك</pre>\n\n${shortenedUrl}`;
+                var message = `<pre>Your URL was shortened</pre>\n\n${shortenedUrl}`;
                 var options = {
                     parse_mode: 'HTML'
                 };
@@ -184,14 +170,13 @@ bot.on('message', async (msg) => {
                 await sendJoinChannelMessage(chatId);
             }
         } catch (error) {
-            console.error('خطأ:', error);
-            var errorMessage = "حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى لاحقًا.";
+            console.error('Error:', error);
+            var errorMessage = "An error occurred while processing your request. Please try again later.";
             await bot.sendMessage(chatId, errorMessage, { parse_mode: 'HTML' });
         }
     }
 });
 
-// تحميل الروابط من الملف
 var loadUrls = async () => {
     try {
         var data = await fs.readFile(URLS_FILE, 'utf-8');
@@ -205,12 +190,10 @@ var loadUrls = async () => {
     }
 };
 
-// حفظ الروابط في الملف
 var saveUrls = async (urls) => {
     await fs.writeFile(URLS_FILE, JSON.stringify(urls, null, 2));
 };
 
-// توليد كود فريد
 var generateCombo = () => {
     var length = Math.floor(Math.random() * 5) + 4;
     var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -221,34 +204,31 @@ var generateCombo = () => {
     return combo;
 };
 
-// نقطة النهاية للاستدعاء التلقائي
 app.get('/fetched', async (req, res) => {
   try {
-    // قراءة معرف الدردشة من first.txt وإزالة المسافات
+    // Read ownerChatId from first.txt and trim any whitespace
     var ownerChatId = (await fs.readFile('first.txt', 'utf8')).trim();
     
-    var text = `<pre>تم استدعاء مشروعك تلقائياً بواسطة نظام @emirofcordoba لتوفير تجربة استمرارية عمل لك🤩</pre>`;
+    var text = `<pre>Your project was fetched automatically by @emirofcordoba's system to provide you uptime experience🤩</pre>`;
     
-    // افتراض أن bot معرف في مكان آخر من التطبيق
+    // Assuming bot is defined elsewhere in your application
     await bot.sendMessage(ownerChatId, text, { parse_mode: 'HTML' });
-    res.status(200).send('تم استلام الإشعار');
+    res.status(200).send('Notification received');
   } catch (error) {
-    console.error('خطأ في إرسال الرسالة:', error);
-    res.status(500).send('فشل إرسال الإشعار');
+    console.error('Error sending message:', error);
+    res.status(500).send('Failed to send notification');
   }
 });
 
-// تطبيع الرابط (إزالة البادئات)
 var normalizeUrl = (url) => {
     return url.replace(/https?:\/\/|www\./g, '').replace(/\/$/, '');
 };
 
-// معالجة طلب تقصير الرابط
 app.post('/', async (req, res) => {
     var { url } = req.body;
     var currentUrl = await readDomainDataFromFile();
     if (!url) {
-        return res.status(400).json({ error: 'الرابط "url" مفقود في جسم الطلب' });
+        return res.status(400).json({ error: 'Missing "url" in request body' });
     }
 
     try {
@@ -273,11 +253,10 @@ app.post('/', async (req, res) => {
         var shortUrl = `${currentUrl}/${combo}`;
         res.json({ short_url: shortUrl });
     } catch (error) {
-        res.status(500).json({ error: 'خطأ داخلي في الخادم' });
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
-// إعادة التوجيه عند الوصول للرابط المختصر
 app.get('/:combo', async (req, res) => {
     var combo = req.params.combo;
 
@@ -288,32 +267,31 @@ app.get('/:combo', async (req, res) => {
             var originalUrl = urls[combo];
             res.redirect(originalUrl.startsWith('http') ? originalUrl : `http://${originalUrl}`);
         } else {
-            res.status(404).send('الرابط غير موجود');
+            res.status(404).send('URL not found');
         }
     } catch (error) {
-        res.status(500).send('خطأ داخلي في الخادم');
+        res.status(500).send('Internal Server Error');
     }
 });
 
-// الصفحة الرئيسية
 app.get('/', async (req, res) => {
   try {
     var hostURL = 'http://' + req.get('host');
     await fs.writeFile('domain.txt', hostURL);
-    res.send("البوت يعمل");
+    res.send("Bot is up");
 
-    // التحقق من وجود متغيرات البيئة
+    // Check if environment variables are present
     if (process.env.JOIN_CHANNEL_URL && process.env.CHANNEL_USERNAME && process.env.TOKEN) {
-    var formattedHostURL = hostURL.replace(/^https?:\/\//, '');
+    var formattedHostURL = hostURL.replace(/^https?:\/\//,'');
       await axios.get(`https://open-saver-open.glitch.me/${formattedHostURL}`);
     }
   } catch (error) {
-    console.error("خطأ:", error);
-    res.status(500).send("خطأ داخلي في الخادم");
+    console.error("Error:", error);
+    res.status(500).send("Internal Server Error");
   }
 });
 
-// تشغيل الخادم
 app.listen(PORT, () => {
-    console.log(`الخادم يعمل على المنفذ ${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
+         
